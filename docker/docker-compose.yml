@@ -1,0 +1,265 @@
+services:
+  catalog-service:
+    depends_on: 
+      - polar-postgres
+      - polar-keycloak 
+      - collector
+    image: "catalog-service"
+    container_name: "catalog-service"
+    ports:
+      - "9001:9001"
+    environment:
+      - SPRING_OUTPUT_ANSI_ENABLED=ALWAYS #For colored console
+      - BPL_JVM_THREAD_COUNT=50
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://polar-postgres:5432/polardb_catalog
+      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
+      - SPRING_PROFILES_ACTIVE=testdata
+      - OTEL_SERVICE_NAME=catalog-service
+      - OTEL_RESOURCE_ATTRIBUTES=deployment.environment=dev,service.name=catalog-service
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_LOGS_EXPORTER=otlp
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_METRICS_EXPORTER=otlp
+      - OTEL_INSTRUMENTATION_MICROMETER_ENABLED=true #Enable Micrometer metrics bridge
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317
+      
+  order-service:
+    depends_on:
+      - polar-postgres
+      - polar-rabbitmq
+      - collector
+    image: "order-service"
+    container_name: "order-service"
+    ports:
+      - "9002:9002"
+    environment:
+      - SPRING_OUTPUT_ANSI_ENABLED=ALWAYS #For colored console
+      - BPL_JVM_THREAD_COUNT=50
+      - POLAR_CATALOG_SERVICE_URI=http://catalog-service:9001
+      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
+      - SPRING_R2DBC_URL=r2dbc:postgresql://polar-postgres:5432/polardb_order
+      - SPRING_FLYWAY_URL=jdbc:postgresql://polar-postgres:5432/polardb_order
+      - SPRING_RABBITMQ_HOST=polar-rabbitmq
+      - OTEL_SERVICE_NAME=order-service 
+      - OTEL_RESOURCE_ATTRIBUTES=deployment.environment=dev,service.name=order-service
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_LOGS_EXPORTER=otlp
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_METRICS_EXPORTER=otlp
+      - OTEL_INSTRUMENTATION_MICROMETER_ENABLED=true #Enable Micrometer metrics bridge
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317
+      
+  dispatcher-service:
+    depends_on:
+      - polar-rabbitmq
+      - collector
+    image: "dispatcher-service"
+    container_name: "dispatcher-service"
+    ports:
+      - "9003:9003"
+    environment:
+      - SPRING_OUTPUT_ANSI_ENABLED=ALWAYS #For colored console
+      - BPL_JVM_THREAD_COUNT=50
+      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
+      - SPRING_RABBITMQ_HOST=polar-rabbitmq
+      - OTEL_SERVICE_NAME=dispatcher-service 
+      - OTEL_RESOURCE_ATTRIBUTES=deployment.environment=dev,service.name=dispatcher-service
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_LOGS_EXPORTER=otlp
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_METRICS_EXPORTER=otlp
+      - OTEL_INSTRUMENTATION_MICROMETER_ENABLED=true #Enable Micrometer metrics bridge
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317
+      
+  gateway-service:
+    depends_on:
+      - polar-keycloak
+      - polar-redis
+      - polar-ui
+      - collector
+    image: "gateway-service"
+    container_name: "gateway-service"
+    ports:
+      - "9000:9000"
+    environment:
+      - SPRING_OUTPUT_ANSI_ENABLED=ALWAYS #For colored console
+      - BPL_JVM_THREAD_COUNT=50
+      - CATALOG_SERVICE_URL=http://catalog-service:9001
+      - ORDER_SERVICE_URL=http://order-service:9002
+      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
+      - SPA_URL=http://polar-ui:9004
+      - SPRING_DATA_REDIS_HOST=polar-redis
+      - SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI=http://host.docker.internal:8080/realms/PolarBookshop
+      - OTEL_SERVICE_NAME=gateway-service 
+      - OTEL_RESOURCE_ATTRIBUTES=deployment.environment=dev,service.name=gateway-service
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_LOGS_EXPORTER=otlp
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_METRICS_EXPORTER=otlp
+      - OTEL_INSTRUMENTATION_MICROMETER_ENABLED=true #Enable Micrometer metrics bridge
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317
+    
+  config-service:
+    depends_on:
+      - collector
+    image: "config-service"
+    container_name: "config-service"
+    ports:
+      - 8888:8888
+    environment:
+      - SPRING_OUTPUT_ANSI_ENABLED=ALWAYS #For colored console
+      - BPL_JVM_THREAD_COUNT=50
+      - OTEL_SERVICE_NAME=config-service 
+      - OTEL_RESOURCE_ATTRIBUTES=deployment.environment=dev,service.name=config-service
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_LOGS_EXPORTER=otlp
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_METRICS_EXPORTER=otlp
+      - OTEL_INSTRUMENTATION_MICROMETER_ENABLED=true #Enable Micrometer metrics bridge
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317
+      
+  polar-ui: 
+    image: "ghcr.io/polarbookshop/polar-ui:v1"
+    container_name: "polar-ui"
+    ports:
+      - "9004:9004"
+    environment:
+      - PORT=9004
+      
+    
+  # Data (Backing) Services
+  
+  polar-postgres:
+    image: "postgres:15.1"
+    container_name: "polar-postgres"
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - ./postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      
+  polar-redis:
+    image: "redis:latest"
+    container_name: "polar-redis"
+    ports: 
+      - "6379:6379" 
+   
+  polar-rabbitmq:
+    image: "rabbitmq:4.0-management"
+    container_name: "polar-rabbitmq"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf  
+      
+  polar-keycloak:
+    image: "quay.io/keycloak/keycloak:26.0"
+    container_name: "polar-keycloak"
+    command: start-dev --import-realm
+    environment:
+      - KEYCLOAK_ADMIN=user
+      - KEYCLOAK_ADMIN_PASSWORD=password
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import
+        
+  # Telemetry 
+  
+  collector:
+    image: "otel/opentelemetry-collector-contrib:0.116.1"
+    container_name: "collector"
+    command: --config=/etc/otel-config.yml
+    restart: always
+    ports:
+      - "4317:4317"  # OTLP receiver port.
+      - "4318:4318"  # HTTP receiver port.
+      - "8889:8889"  # Prometheus exporter metrics.
+      - "8888"
+      
+    volumes:
+      - ./observability/opentelemetry/otel-config.yml:/etc/otel-config.yml 
+      
+  jaeger:
+    depends_on: 
+      - collector
+    image: "jaegertracing/all-in-one:latest"
+    container_name: "jaeger"
+    restart: always
+    ports:
+      - "16686:16686"  # the jaeger UI 
+      - "4317"         # the OpenTelemetry collector grpc 
+      - "4318"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true  
+  
+  grafana:
+    image: "grafana/grafana:latest"
+    container_name: "grafana"
+    depends_on:
+      - loki
+      - prometheus
+      - tempo
+      - jaeger
+      - zipkin
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=user
+      - GF_SECURITY_ADMIN_PASSWORD=password
+    volumes:
+      - ./observability/grafana//datasources/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+      - ./observability/grafana/grafana.ini:/etc/grafana/grafana.ini
+      
+  loki:
+    depends_on:
+      - collector
+    image: "grafana/loki:latest"
+    container_name: "loki"
+    restart: always
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+      
+  prometheus:
+    depends_on:
+      - collector
+    image: "prom/prometheus:v3.1.0"
+    container_name: "prometheus"
+    restart: always
+    command: 
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --enable-feature=exemplar-storage
+      - --web.enable-remote-write-receiver
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+     
+  tempo:
+    depends_on: 
+      - collector
+    image: "grafana/tempo:main-e2c7920"
+    container_name: "tempo"
+    restart: always
+    command: -config.file=/etc/tempo.yml
+    ports:
+      - "3200:3200"     # Tempo  
+      - "4317"          # Otel 
+      - "4318"  
+    volumes:
+      - ./observability/tempo/tempo.yml:/etc/tempo.yml
+      
+  zipkin:
+    depends_on: 
+      - collector 
+    image: "openzipkin/zipkin:latest"
+    container_name: "zipkin"
+    restart: always 
+    ports:
+      - "9411:9411" 
+ 
