@@ -119,7 +119,7 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317
       
   polar-ui: 
-    image: "ghcr.io/polarbookshop/polar-ui:v1"
+    image: "ghcr.io/polarbookshop/polar-ui:demo"
     container_name: "polar-ui"
     ports:
       - "9004:9004"
