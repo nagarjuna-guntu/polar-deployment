@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dispatcher-service
+  labels:
+    app: dispatcher-service
+spec:
+  template:
+    spec:
+      containers:
+        - name: dispatcher-service
+          resources:
+            requests:
+              cpu: 0.1
+              memory: 756Mi
+            limits:
+              cpu: 2
+              memory: 756Mi

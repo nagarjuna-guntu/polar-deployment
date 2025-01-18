@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:    
+  - https://github.com/nagarjuna-guntu/gateway-service/k8s?ref=main
+  
+patchesStrategicMerge:
+  - patch-env.yml
+  - patch-volumes.yml
+  - patch-resources.yml 
+  
+configMapGenerator:
+  - behavior: merge
+    files:
+      - application-prod.yml
+    name: gateway-config
+  
+images:
+  - name: gateway-service
+    newName: ghcr.io/polarbookshop/catalog-service
+    newTag: latest
+
+replicas:
+  - name: gateway-service
+    count: 2

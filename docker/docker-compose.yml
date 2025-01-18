@@ -34,7 +34,6 @@ services:
       - "9002:9002"
     environment:
       - SPRING_OUTPUT_ANSI_ENABLED=ALWAYS #For colored console
-      - BPL_JVM_THREAD_COUNT=50
       - POLAR_CATALOG_SERVICE_URI=http://catalog-service:9001
       - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
       - SPRING_R2DBC_URL=r2dbc:postgresql://polar-postgres:5432/polardb_order
@@ -59,7 +58,6 @@ services:
       - "9003:9003"
     environment:
       - SPRING_OUTPUT_ANSI_ENABLED=ALWAYS #For colored console
-      - BPL_JVM_THREAD_COUNT=50
       - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
       - SPRING_RABBITMQ_HOST=polar-rabbitmq
       - OTEL_SERVICE_NAME=dispatcher-service 
@@ -83,7 +81,6 @@ services:
       - "9000:9000"
     environment:
       - SPRING_OUTPUT_ANSI_ENABLED=ALWAYS #For colored console
-      - BPL_JVM_THREAD_COUNT=50
       - CATALOG_SERVICE_URL=http://catalog-service:9001
       - ORDER_SERVICE_URL=http://order-service:9002
       - SPRING_CLOUD_CONFIG_URI=http://config-service:8888

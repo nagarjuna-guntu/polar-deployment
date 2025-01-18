@@ -51,7 +51,7 @@ spec:
       volumes:
         - name: polar-keycloak-config-volume
           configMap:
-            name: polar-keycloak
+            name: keycloak-config
 
 ---
 
