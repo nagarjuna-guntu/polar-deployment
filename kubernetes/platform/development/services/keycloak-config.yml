@@ -1829,7 +1829,7 @@ data:
         "parRequestUriLifespan" : "60",
         "cibaInterval" : "5"
       },
-      "keycloakVersion" : "18.0.0",
+      "keycloakVersion" : "26.0",
       "userManagedAccessAllowed" : false,
       "clientProfiles" : {
         "profiles" : [ ]

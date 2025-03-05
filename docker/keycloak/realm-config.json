@@ -713,7 +713,7 @@
             "clientAuthenticatorType": "client-secret",
             "secret": "polar-keycloak-secret",
             "redirectUris": [
-                "*"
+				"*" 
             ],
             "webOrigins": [
                 "*"

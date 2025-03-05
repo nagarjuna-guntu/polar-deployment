@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
         - name: polar-rabbitmq
-          image: rabbitmq:4.0-management
+          image: rabbitmq:4.0.5-management
           resources:
             requests:
               cpu: 100m

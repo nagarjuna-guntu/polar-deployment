@@ -14,6 +14,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://polar-postgres:5432/polardb_catalog
       - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
       - SPRING_PROFILES_ACTIVE=testdata
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://polar-keycloak:8080/realms/PolarBookshop 
       - OTEL_SERVICE_NAME=catalog-service
       - OTEL_RESOURCE_ATTRIBUTES=deployment.environment=dev,service.name=catalog-service
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
@@ -22,6 +23,8 @@ services:
       - OTEL_METRICS_EXPORTER=otlp
       - OTEL_INSTRUMENTATION_MICROMETER_ENABLED=true #Enable Micrometer metrics bridge
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317
+      #map the polar-keycloak hostname to 127.0.0.1 in the hosts file, for keycloak to run without iss claim issue. 
+      #Add-Content C:\Windows\System32\drivers\etc\hosts "127.0.0.1 polar-keycloak" 
       
   order-service:
     depends_on:
@@ -39,6 +42,7 @@ services:
       - SPRING_R2DBC_URL=r2dbc:postgresql://polar-postgres:5432/polardb_order
       - SPRING_FLYWAY_URL=jdbc:postgresql://polar-postgres:5432/polardb_order
       - SPRING_RABBITMQ_HOST=polar-rabbitmq
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://polar-keycloak:8080/realms/PolarBookshop
       - OTEL_SERVICE_NAME=order-service 
       - OTEL_RESOURCE_ATTRIBUTES=deployment.environment=dev,service.name=order-service
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
@@ -86,7 +90,7 @@ services:
       - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
       - SPA_URL=http://polar-ui:9004
       - SPRING_DATA_REDIS_HOST=polar-redis
-      - SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI=http://host.docker.internal:8080/realms/PolarBookshop
+      - SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI=http://polar-keycloak:8080/realms/PolarBookshop
       - OTEL_SERVICE_NAME=gateway-service 
       - OTEL_RESOURCE_ATTRIBUTES=deployment.environment=dev,service.name=gateway-service
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
@@ -116,7 +120,7 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317
       
   polar-ui: 
-    image: "ghcr.io/polarbookshop/polar-ui:demo"
+    image: "ghcr.io/polarbookshop/polar-ui:v1"
     container_name: "polar-ui"
     ports:
       - "9004:9004"
@@ -138,13 +142,13 @@ services:
       - ./postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql
       
   polar-redis:
-    image: "redis:latest"
+    image: "redis:7.4.2"
     container_name: "polar-redis"
     ports: 
       - "6379:6379" 
    
   polar-rabbitmq:
-    image: "rabbitmq:4.0-management"
+    image: "rabbitmq:4.0.5-management"
     container_name: "polar-rabbitmq"
     ports:
       - "5672:5672"
@@ -173,10 +177,7 @@ services:
     restart: always
     ports:
       - "4317:4317"  # OTLP receiver port.
-      - "4318:4318"  # HTTP receiver port.
       - "8889:8889"  # Prometheus exporter metrics.
-      - "8888"
-      
     volumes:
       - ./observability/opentelemetry/otel-config.yml:/etc/otel-config.yml 
       
