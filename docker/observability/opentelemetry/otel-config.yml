@@ -10,9 +10,9 @@ processors:
 exporters:
   debug:
     verbosity: detailed    
-  prometheusremotewrite:
+  prometheusremotewrite: #prometheusremotewrite to push the metrics to Prometheus server
     endpoint: "http://prometheus:9090/api/v1/write"    
-  prometheus:
+  prometheus:  #Prometheus exporter to allow scraping by a Prometheus server.
     endpoint: "0.0.0.0:8889"
     enable_open_metrics: true  
   otlp/tempo:
@@ -30,6 +30,12 @@ exporters:
     endpoint: "http://loki:3100/otlp"  
     
 service:
+  telemetry: #to activate open telemetry internal telemetry data
+	logs:
+	  level: debug
+    metrics: #Internal metrics are exposed using a Prometheus interface which defaults to port 8888, define in the prom config file to scrape
+	  level: detailed
+			
   pipelines:
     logs:
       receivers: [otlp]

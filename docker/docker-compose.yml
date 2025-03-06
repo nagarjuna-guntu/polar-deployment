@@ -117,7 +117,7 @@ services:
       - OTEL_TRACES_EXPORTER=otlp
       - OTEL_METRICS_EXPORTER=otlp
       - OTEL_INSTRUMENTATION_MICROMETER_ENABLED=true #Enable Micrometer metrics bridge
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317 #To connect Otel Collector
       
   polar-ui: 
     image: "ghcr.io/polarbookshop/polar-ui:v1"
@@ -177,7 +177,8 @@ services:
     restart: always
     ports:
       - "4317:4317"  # OTLP receiver port.
-      - "8889:8889"  # Prometheus exporter metrics.
+      - "8889:8889"  # Prometheus exporter for metrics.
+	  - "8888:8888"  #8888 is the port the collector uses for metrics self-telemetry need to define as telemtry in service part of otel-config.
     volumes:
       - ./observability/opentelemetry/otel-config.yml:/etc/otel-config.yml 
       
